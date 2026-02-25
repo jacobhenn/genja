@@ -1,3 +1,4 @@
 /target
 /.direnv
-misc-play.ipynb
+/misc-play.ipynb
+/.ipynb_checkpoints
