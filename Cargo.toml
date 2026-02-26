@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 approx = "0.5.1"
 bevy = { version = "0.18.0", features = ["dynamic_linking", "free_camera"] }
+# bevy_dev_tools = { version = "0.18.0", features = ["screenrecording"] }
 bevy_polyline = { git = "https://github.com/m-edlund/bevy_polyline.git", rev = "c315c996e925e65b44f945975ba7baaf5d2a6432" }
 cpal = "0.15"
 ringbuf = "0.4.8"

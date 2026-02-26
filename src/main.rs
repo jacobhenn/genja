@@ -33,11 +33,7 @@ fn spawn_camera(mut commands: Commands) {
     commands.spawn((
         Camera3d::default(),
         Transform::from_xyz(0.0, 0.0, 5.0).looking_at(Vec3::ZERO, Dir3::Y),
-        AmbientLight {
-            color: Color::WHITE,
-            brightness: 800.0,
-            ..default()
-        },
+        AmbientLight { color: Color::WHITE, brightness: 800.0, ..default() },
         FreeCamera {
             sensitivity: 0.8,
             friction: 25.0,
@@ -90,7 +86,7 @@ struct ParametricPath {
 }
 
 fn default_path(t: f32) -> Vec3 {
-    Vec3::new((t * 2.0 * TAU).cos(), (t * 2.0 * TAU).sin(), t)
+    Vec3::new((t * 4.0 * TAU).cos(), (t * 4.0 * TAU).sin(), t * 2.0)
 }
 
 struct ScenePlugin;
@@ -106,16 +102,42 @@ fn spawn_axes(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
-    let axes = [Dir3::X, Dir3::Y, Dir3::Z]
-        .map(|dir| meshes.add(Segment3d::from_direction_and_length(dir, 100.0)));
+    // let axes = [Dir3::X, Dir3::Y, Dir3::Z]
+    //     .map(|dir| meshes.add(Segment3d::from_direction_and_length(dir, 1.0e3)));
 
-    let materials = [tailwind::RED_500, tailwind::GREEN_500, tailwind::BLUE_500]
-        .map(|col| materials.add(Color::from(col)));
+    // let materials = [tailwind::RED_500, tailwind::GREEN_500, tailwind::BLUE_500]
+    //     .map(|col| materials.add(Color::from(col)));
 
-    for (axis, material) in iter::zip(axes, materials) {
-        commands.spawn((Mesh3d(axis.clone()), MeshMaterial3d(material.clone())));
-    }
+    // for (axis, material) in iter::zip(axes, materials) {
+    //     commands.spawn((Mesh3d(axis.clone()), MeshMaterial3d(material.clone())));
+    // }
 }
+
+// fn spawn_axes(
+//     mut commands: Commands,
+//     mut polyline_materials: ResMut<Assets<PolylineMaterial>>,
+//     mut polylines: ResMut<Assets<Polyline>>,
+// ) {
+//     let axes = [Vec3::X, Vec3::Y, Vec3::Z]
+//         .map(|u| polylines.add(Polyline { vertices: (-10..=10).map(|a| u * a as f32).collect() }));
+
+//     let materials = [tailwind::RED_500, tailwind::GREEN_500, tailwind::BLUE_500].map(|col| {
+//         polyline_materials.add(PolylineMaterial {
+//             width: 1.0,
+//             color: col.into(),
+//             perspective: false,
+//             ..default()
+//         })
+//     });
+
+//     for (axis, material) in iter::zip(axes, materials) {
+//         commands.spawn(PolylineBundle {
+//             polyline: PolylineHandle(axis),
+//             material: PolylineMaterialHandle(material),
+//             ..default()
+//         });
+//     }
+// }
 
 fn spawn_path(
     mut commands: Commands,
@@ -125,9 +147,7 @@ fn spawn_path(
 ) {
     let samples = 1000;
     let polyline_vertices = (0..samples).map(|i| (path.f)(i as f32 / samples as f32));
-    let polyline = polylines.add(Polyline {
-        vertices: polyline_vertices.collect(),
-    });
+    let polyline = polylines.add(Polyline { vertices: polyline_vertices.collect() });
     let polyline_material = polyline_materials.add(PolylineMaterial {
         width: 3.0,
         color: tailwind::RED_500.into(),

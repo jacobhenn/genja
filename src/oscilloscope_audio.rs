@@ -52,12 +52,8 @@ pub fn setup_audio(app: &mut App) {
     let (prod, mut cons) = rb.split();
 
     let host = cpal::default_host();
-    let device = host
-        .default_output_device()
-        .expect("host should have output device");
-    let config = device
-        .default_output_config()
-        .expect("device should have output config");
+    let device = host.default_output_device().expect("host should have output device");
+    let config = device.default_output_config().expect("device should have output config");
 
     let sample_rate = config.sample_rate().0;
     let channels = config.channels() as usize;
@@ -83,13 +79,8 @@ pub fn setup_audio(app: &mut App) {
     stream.play().expect("stream should play");
 
     app.insert_non_send_resource(AudioStreamHandle { _stream: stream });
-    app.insert_resource(AudioQueue {
-        prod: Arc::new(Mutex::new(prod)),
-    });
-    app.insert_resource(AudioDeviceConfig {
-        sample_rate,
-        _channels: channels,
-    });
+    app.insert_resource(AudioQueue { prod: Arc::new(Mutex::new(prod)) });
+    app.insert_resource(AudioDeviceConfig { sample_rate, _channels: channels });
 }
 
 fn generate_audio(
@@ -100,28 +91,28 @@ fn generate_audio(
     path: Res<ParametricPath>,
     camera_query: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
 ) {
+    // dt = time since `generate_audio` was last called
     let dt = time.delta_secs();
-    let n = (dt * (config.sample_rate as f32)).ceil() as usize;
+    let n_frames = (dt * (config.sample_rate as f32)).ceil() as usize;
 
+    // handle to an spsc ring buffer for audio samples consumed by the output device
     let mut prod = audio.prod.lock().unwrap();
 
     let (camera, camera_xform) = camera_query.single().expect("there is one camera");
     // let phys_vp_size = camera.physical_viewport_size().expect("viewport exists");
 
     let freq = 150.0;
-    for _ in 0..n {
+    for _ in 0..n_frames {
         let pt_world = (path.f)(*phase);
-        let pt_ndc = camera
-            .world_to_ndc(camera_xform, pt_world)
-            .unwrap_or_else(|| {
-                warn!("world_to_ndc failed");
-                Vec3::new(0.0, 0.0, 0.0)
-            });
+        // ndc = normalized device coordinates; they live in [-1, 1] regardless of window size
+        let pt_ndc = camera.world_to_ndc(camera_xform, pt_world).unwrap_or_else(|| {
+            warn!("world_to_ndc failed");
+            Vec3::new(0.0, 0.0, 0.0)
+        });
 
-        prod.try_push(pt_ndc.x.clamp_magnitude(1.0) * 0.5)
-            .expect("able to push to ringbuf");
-        prod.try_push(pt_ndc.y.clamp_magnitude(1.0) * 0.5)
-            .expect("able to push to ringbuf");
+        // a frame is 2 samples, left and right
+        prod.try_push(pt_ndc.x.clamp_magnitude(1.0) * 0.5).expect("able to push to ringbuf");
+        prod.try_push(pt_ndc.y.clamp_magnitude(1.0) * 0.5).expect("able to push to ringbuf");
 
         *phase += freq / config.sample_rate as f32;
         if *phase >= 1.0 {

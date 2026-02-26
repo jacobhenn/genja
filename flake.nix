@@ -44,6 +44,7 @@
             libxkbcommon
             wayland
             wayland.dev
+            # x264 # for bevy_dev_tools screen recording
           ];
           LD_LIBRARY_PATH = lib.makeLibraryPath [
               vulkan-loader
